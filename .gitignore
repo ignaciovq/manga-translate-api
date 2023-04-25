@@ -2,10 +2,10 @@ fastapi/
 *.pyc
 .idea
 .DS_Store
-comicTextDetector/data/comictextdetector.pt
-comicTextDetector/models/comictextdetector.pt
-comicTextDetector/models/aot_inpainter.ckpt
-comicTextDetector/models/comictextdetector.pt.onnx
-comicTextDetector/models/lama_mpe.ckpt
-comicTextDetector/models/mit32px_ocr.ckpt
-comicTextDetector/models/mit48pxctc_ocr.ckpt
+comic_text_detector/data/comictextdetector.pt
+comic_text_detector/models/comictextdetector.pt
+comic_text_detector/models/aot_inpainter.ckpt
+comic_text_detector/models/comictextdetector.pt.onnx
+comic_text_detector/models/lama_mpe.ckpt
+comic_text_detector/models/mit32px_ocr.ckpt
+comic_text_detector/models/mit48pxctc_ocr.ckpt

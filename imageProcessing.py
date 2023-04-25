@@ -2,43 +2,41 @@ from PIL import Image
 from singleton import Singleton
 from manga_ocr import MangaOcr
 import json
-import os
 
 
-def clipTextFromMask(filename):
-    name, ext = os.path.splitext(filename)
-    textClips = {'language': '', 'clips': []}
+def clip_text_from_mask(filename):
+    text_clips = {'language': '', 'clips': []}
 
-    with open(f"assets/processedImagesData/{name}.json", 'r') as file:
+    with open(f"assets/processedImagesData/{filename}.json", 'r') as file:
         data = json.load(file)
     print(len(data))
 
-    mask = Image.open(f"assets/processedImagesData/mask-{name}.png")
+    mask = Image.open(f"assets/processedImagesData/mask-{filename}.png")
     for index, obj in enumerate(data):
         if index == 0:
-            textClips['language'] = obj['language']
+            text_clips['language'] = obj['language']
         coordinates = obj['xyxy']
         x1, y1, x2, y2 = coordinates
         clipping = mask.crop((x1, y1, x2, y2))
-        clipdir = f"assets/imageClips/mask-{name}{index}.png"
-        clipping.save(clipdir)
-        textClips['clips'].append((coordinates, clipdir))
+        clip_dir = f"assets/imageClips/mask-{filename}{index}.png"
+        clipping.save(clip_dir)
+        text_clips['clips'].append((coordinates, clip_dir))
 
     mask.close()
-    return textClips
+    return text_clips
 
 
-def getTextFromClips(ocr, clips):
-    returnData = []
+def get_text_from_clips(ocr, clips):
+    return_data = []
 
     for clip in clips:
         image = Image.open(clip[1])
         text = ocr(image)
         print(text)
-        returnData.append({'text': text, 'coordinates': clip[0]})
+        return_data.append({'text': text, 'coordinates': clip[0]})
         image.close()
 
-    return returnData
+    return return_data
 
 
 class MangaOcrSingleton(MangaOcr, metaclass=Singleton):

@@ -1,10 +1,10 @@
-from comicTextDetector.utils.yolov5_utils import scale_img, check_anchor_order, initialize_weights, fuse_conv_and_bn, make_divisible, \
+from comic_text_detector.utils.yolov5_utils import scale_img, check_anchor_order, initialize_weights, fuse_conv_and_bn, make_divisible, \
     check_version
 from copy import deepcopy
 from .common import *
 from copy import deepcopy
 
-from comicTextDetector.utils.yolov5_utils import scale_img
+from comic_text_detector.utils.yolov5_utils import scale_img
 
 from .common import *
 

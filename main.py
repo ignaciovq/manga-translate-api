@@ -1,10 +1,11 @@
+import os
 from fastapi import FastAPI, File, UploadFile, Depends
 from PIL import Image
 from io import BytesIO
 from manga_ocr import MangaOcr
-from detection import getBBoxesAndSaveToFile
-from imageProcessing import clipTextFromMask, getTextFromClips, get_manga_ocr
-from utils import clearFiles
+from detection import get_bboxes_and_save_to_file
+from imageProcessing import clip_text_from_mask, get_text_from_clips, get_manga_ocr
+from utils import clear_files
 
 app = FastAPI()
 
@@ -18,16 +19,18 @@ def root():
 async def ocr(file: UploadFile = File(...), ocr: MangaOcr = Depends(get_manga_ocr)):
     content = await file.read()
 
+    file_name, extension = os.path.splitext(file.filename)
+
     image = Image.open(BytesIO(content))
-    image.save(f"assets/imagesToProcess/{file.filename}")
+    image.save(f"assets/imagesToProcess/{file_name}.png", format="png", lossless=True)
     image.close()
 
-    getBBoxesAndSaveToFile()
-    textClips = clipTextFromMask(file.filename)
-    text = getTextFromClips(ocr, textClips['clips'])
+    get_bboxes_and_save_to_file()
+    text_clips = clip_text_from_mask(file_name)
+    text = get_text_from_clips(ocr, text_clips['clips'])
 
-    response = {"filename": file.filename, "language": textClips['language'], "result": text}
+    response = {"filename": file.filename, "language": text_clips['language'], "result": text}
 
-    clearFiles(file.filename, len(textClips['clips']))
+    clear_files(file_name, len(text_clips['clips']))
 
     return response

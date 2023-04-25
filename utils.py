@@ -1,19 +1,18 @@
 import os
 
 
-def clearFiles(filename, clipLength):
-    name, ext = os.path.splitext(filename)
+def clear_files(filename, clip_length):
 
     try:
-        os.remove(f"assets/imagesToProcess/{filename}")
-        os.remove(f"assets/processedImagesData/{name}.json")
-        os.remove(f"assets/processedImagesData/mask-{name}.png")
-        os.remove(f"assets/processedImagesData/{name}.png")
-        os.remove(f"assets/processedImagesData/{name}.txt")
-        os.remove(f"assets/processedImagesData/line-{name}.txt")
+        os.remove(f"assets/imagesToProcess/{filename}.png")
+        os.remove(f"assets/processedImagesData/{filename}.json")
+        os.remove(f"assets/processedImagesData/mask-{filename}.png")
+        os.remove(f"assets/processedImagesData/{filename}.png")
+        os.remove(f"assets/processedImagesData/{filename}.txt")
+        os.remove(f"assets/processedImagesData/line-{filename}.txt")
 
-        for i in range(0, clipLength):
-            os.remove(f"assets/imageClips/mask-{name}{i}.png")
+        for i in range(0, clip_length):
+            os.remove(f"assets/imageClips/mask-{filename}{i}.png")
 
     except Exception as e:
         print(e)
