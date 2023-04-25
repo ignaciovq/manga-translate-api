@@ -1,6 +1,8 @@
 from PIL import Image
-import json, os
+from singleton import Singleton
 from manga_ocr import MangaOcr
+import json
+import os
 
 
 def clipTextFromMask(filename):
@@ -26,8 +28,7 @@ def clipTextFromMask(filename):
     return textClips
 
 
-def getTextFromClips(clips):
-    ocr = MangaOcr()
+def getTextFromClips(ocr, clips):
     returnData = []
 
     for clip in clips:
@@ -38,3 +39,12 @@ def getTextFromClips(clips):
         image.close()
 
     return returnData
+
+
+class MangaOcrSingleton(MangaOcr, metaclass=Singleton):
+    pass
+
+
+def get_manga_ocr():
+    ocr_instance = MangaOcrSingleton()
+    return ocr_instance

@@ -1,8 +1,9 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends
 from PIL import Image
 from io import BytesIO
+from manga_ocr import MangaOcr
 from detection import getBBoxesAndSaveToFile
-from imageProcessing import clipTextFromMask, getTextFromClips
+from imageProcessing import clipTextFromMask, getTextFromClips, get_manga_ocr
 from utils import clearFiles
 
 app = FastAPI()
@@ -14,7 +15,7 @@ def root():
 
 
 @app.post("/api/ocr")
-async def ocr(file: UploadFile = File(...)):
+async def ocr(file: UploadFile = File(...), ocr: MangaOcr = Depends(get_manga_ocr)):
     content = await file.read()
 
     image = Image.open(BytesIO(content))
@@ -23,7 +24,7 @@ async def ocr(file: UploadFile = File(...)):
 
     getBBoxesAndSaveToFile()
     textClips = clipTextFromMask(file.filename)
-    text = getTextFromClips(textClips['clips'])
+    text = getTextFromClips(ocr, textClips['clips'])
 
     response = {"filename": file.filename, "language": textClips['language'], "result": text}
 

@@ -12,7 +12,7 @@ def clearFiles(filename, clipLength):
         os.remove(f"assets/processedImagesData/{name}.txt")
         os.remove(f"assets/processedImagesData/line-{name}.txt")
 
-        for i in range(0, clipLength - 1):
+        for i in range(0, clipLength):
             os.remove(f"assets/imageClips/mask-{name}{i}.png")
 
     except Exception as e:
