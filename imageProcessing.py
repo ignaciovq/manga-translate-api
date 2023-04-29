@@ -9,7 +9,6 @@ def clip_text_from_mask(filename):
 
     with open(f"assets/processedImagesData/{filename}.json", 'r') as file:
         data = json.load(file)
-    print(len(data))
 
     mask = Image.open(f"assets/processedImagesData/mask-{filename}.png")
     for index, obj in enumerate(data):
@@ -32,7 +31,6 @@ def get_text_from_clips(ocr, clips):
     for clip in clips:
         image = Image.open(clip[1])
         text = ocr(image)
-        print(text)
         return_data.append({'text': text, 'coordinates': clip[0]})
         image.close()
 

@@ -20,8 +20,10 @@ from utils.db_utils import MakeBorderMap, MakeShrinkMap
 from utils.imgproc_utils import rotate_polygons, letterbox, resize_keepasp
 
 WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))  # DPP
-NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of multiprocessing threads
+# number of multiprocessing threads
+NUM_THREADS = min(8, max(1, os.cpu_count() - 1))
 IMG_EXT = ['.bmp', '.jpg', '.png', '.jpeg']
+
 
 def db_val_collate_fn(batchs):
     cat_list = ['text_polys', 'ignore_tags']
@@ -38,6 +40,7 @@ def db_val_collate_fn(batchs):
             ret_batchs[key] = torch.stack(ret_batchs[key], 0)
     return ret_batchs
 
+
 class LoadImageAndAnnotations(Dataset):
     def __init__(self, img_dir, ann_dir=None, img_size=640, augment=False, aug_param=None, cache=False, stride=128, cache_ann_only=True, with_ann=False):
         if isinstance(img_dir, str):
@@ -46,7 +49,7 @@ class LoadImageAndAnnotations(Dataset):
             self.img_dir = img_dir
         else:
             raise Exception('unknown img_dir format')
-        
+
         if ann_dir is None or ann_dir == '':
             self.ann_dir = self.img_dir
         else:
@@ -68,10 +71,10 @@ class LoadImageAndAnnotations(Dataset):
             self._neg = aug_param['neg']
             self._rotate = aug_param['rotate']
             self.rotate_range = aug_param['rotate_range']
-            size_range = aug_param['size_range'] 
+            size_range = aug_param['size_range']
             if isinstance(size_range, list) and size_range[0] > 0:
-                min_size = round(img_size * size_range[0] / stride ) * stride
-                max_size = round(img_size * size_range[1] / stride ) * stride
+                min_size = round(img_size * size_range[0] / stride) * stride
+                max_size = round(img_size * size_range[1] / stride) * stride
                 self.valid_size = np.arange(min_size, max_size+1, stride)
                 self.multi_size = True
             else:
@@ -94,10 +97,12 @@ class LoadImageAndAnnotations(Dataset):
         self.imgs, self.anns = [None] * n, [None] * n
         gb = 0
         if cache:
-            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image_annotations(*x, max_size=img_size), zip(repeat(self), range(n)))
+            results = ThreadPool(NUM_THREADS).imap(lambda x: load_image_annotations(
+                *x, max_size=img_size), zip(repeat(self), range(n)))
             pbar = tqdm(enumerate(results), total=n)
             for i, x in pbar:
-                im, self.anns[i] = x  # im, hw_orig, hw_resized = load_image_ann(self, i)
+                # im, hw_orig, hw_resized = load_image_ann(self, i)
+                im, self.anns[i] = x
                 if not cache_ann_only:
                     self.imgs[i] = im
                     gb += self.imgs[i].nbytes
@@ -106,12 +111,12 @@ class LoadImageAndAnnotations(Dataset):
                     break
                 pbar.desc = f'Caching images ({gb / 1E9:.1f}GB )'
             pbar.close()
-        
+
     def initialize(self):
         if self.augment:
             if self.multi_size:
                 self.img_size = random.choice(self.valid_size)
-    
+
     def transform(self, img):
         cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
         img = img.astype(np.float32) / 255
@@ -123,7 +128,7 @@ class LoadImageAndAnnotations(Dataset):
         idx = random.randint(0, len(self)-1)
         img2, ann2 = load_image_annotations(self, idx, self.img_size)
         img2_h, img2_w = img2.shape[:2]
-        
+
         if img2_h > img2_w:
             imm_h = max(im_h, img2_h)
             imm_w = im_w + img2_w
@@ -138,7 +143,7 @@ class LoadImageAndAnnotations(Dataset):
                 ann = np.concatenate((ann, ann2))
             img = im_tmp
             return img, ann
-                
+
         else:
             return img, ann
 
@@ -156,7 +161,8 @@ class LoadImageAndAnnotations(Dataset):
         if random.random() < self._neg:
             img = 255 - img
         if random.random() < self._rotate:
-            degrees = random.uniform(self.rotate_range[0], self.rotate_range[1])
+            degrees = random.uniform(
+                self.rotate_range[0], self.rotate_range[1])
             if abs(degrees) > 15:
                 img = Image.fromarray(img)
                 center = (img.width/2, img.height/2)
@@ -165,7 +171,8 @@ class LoadImageAndAnnotations(Dataset):
                 ann = ann.reshape(len(ann), -1)
                 img = img.rotate(degrees, resample=Image.BILINEAR, expand=1)
                 new_center = (img.width/2, img.height/2)
-                ann = rotate_polygons(center, ann, degrees, new_center, to_int=False)
+                ann = rotate_polygons(
+                    center, ann, degrees, new_center, to_int=False)
                 ann = ann.reshape(len(ann), -1, 2)
                 ann[:, :, 0] /= img.width
                 ann[:, :, 1] /= img.height
@@ -191,13 +198,15 @@ class LoadImageAndAnnotations(Dataset):
             img, ann = self.augment(img, ann)
         ignore_tags = [False] * ann.shape[0]
 
-        img, ratio, (dw, dh) = letterbox(img, new_shape=self.img_size, auto=False)
+        img, ratio, (dw, dh) = letterbox(
+            img, new_shape=self.img_size, auto=False)
         im_h, im_w = img.shape[:2]
         if ann is not None:
             ann[:, :, 0] *= (im_w - dw)
             ann[:, :, 1] *= (im_h - dh)
             ann = ann.astype(np.int64)
-        data_dict = {'imgs': img, 'text_polys': ann, 'ignore_tags': ignore_tags}
+        data_dict = {'imgs': img, 'text_polys': ann,
+                     'ignore_tags': ignore_tags}
 
         shrink_map = self.make_shrink_map(data_dict)
         thresh_map = self.make_border_map(data_dict)
@@ -234,16 +243,21 @@ def load_image_annotations(self, i, max_size=None, ann_abs2rel=True):
         img = resize_keepasp(img, max_size)
     return img, ann
 
+
 def create_dataloader(img_dir, ann_dir, imgsz, batch_size, augment=False, aug_param=None, cache=False, workers=8, shuffle=False, with_ann=False):
-    dataset = LoadImageAndAnnotations(img_dir, ann_dir, imgsz, augment, aug_param, cache, with_ann=with_ann)
+    dataset = LoadImageAndAnnotations(
+        img_dir, ann_dir, imgsz, augment, aug_param, cache, with_ann=with_ann)
     batch_size = min(batch_size, len(dataset))
-    nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size > 1 else 0, workers])  # number of workers
+    nw = min([os.cpu_count() // WORLD_SIZE, batch_size if batch_size >
+             1 else 0, workers])  # number of workers
     if with_ann:
         collate_fn = db_val_collate_fn
     else:
         collate_fn = None
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, pin_memory=True, num_workers=nw, collate_fn=collate_fn)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle,
+                        pin_memory=True, num_workers=nw, collate_fn=collate_fn)
     return dataset, loader
+
 
 if __name__ == '__main__':
     img_dir = 'data/dataset/db_sub'
@@ -252,21 +266,23 @@ if __name__ == '__main__':
         hyp = yaml.safe_load(f.read())
     hyp['data']['train_img_dir'] = img_dir
     hyp['data']['cache'] = False
-    hyp_train, hyp_data, hyp_model, hyp_logger, hyp_resume = hyp['train'], hyp['data'], hyp['model'], hyp['logger'], hyp['resume']
+    hyp_train, hyp_data, hyp_model, hyp_logger, hyp_resume = hyp[
+        'train'], hyp['data'], hyp['model'], hyp['logger'], hyp['resume']
     batch_size = hyp_train['batch_size']
     batch_size = 1
     num_workers = 0
-    train_img_dir, train_mask_dir, imgsz, augment, aug_param = hyp_data['train_img_dir'], hyp_data['train_mask_dir'], hyp_data['imgsz'], hyp_data['augment'], hyp_data['aug_param']
+    train_img_dir, train_mask_dir, imgsz, augment, aug_param = hyp_data['train_img_dir'], hyp_data[
+        'train_mask_dir'], hyp_data['imgsz'], hyp_data['augment'], hyp_data['aug_param']
 
-    train_dataset, train_loader = create_dataloader(train_img_dir, train_mask_dir, imgsz, batch_size, augment, aug_param, shuffle=True, workers=num_workers, cache=hyp_data['cache'], with_ann=True)
+    train_dataset, train_loader = create_dataloader(train_img_dir, train_mask_dir, imgsz, batch_size,
+                                                    augment, aug_param, shuffle=True, workers=num_workers, cache=hyp_data['cache'], with_ann=True)
 
     for ii in range(10):
-        
+
         for batchs in train_loader:
             train_dataset.initialize()
-            print(train_dataset.img_size)
             img = batchs['imgs'][0]
-            
+
             img = train_dataset.inverse_transform(img)
             threshold_map = batchs['threshold_map'][0]
             threshold_mask = batchs['threshold_mask'][0]
@@ -274,10 +290,10 @@ if __name__ == '__main__':
             shrink_mask = batchs['shrink_mask'][0]
             polys = batchs['text_polys'][0].numpy().astype(np.int32)
             for p in polys:
-                cv2.polylines(img,[p],True,(255, 0, 0), thickness=2)
+                cv2.polylines(img, [p], True, (255, 0, 0), thickness=2)
             cv2.imshow('imgs', img)
             cv2.imshow('threshold_map', threshold_map.numpy())
             cv2.imshow('threshold_mask', threshold_mask.numpy())
             cv2.imshow('shrink_map', shrink_map.numpy())
             cv2.imshow('shrink_mask', shrink_mask.numpy())
-            cv2.waitKey(0) 
+            cv2.waitKey(0)
